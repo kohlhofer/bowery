@@ -1,44 +1,63 @@
 --- Springs
 -- a spring physics based voltage follower
--- input 1: target voltage
--- input 2: update clock
+-- input 1+2: voltages that outs 1/2 and 2/4 will follow.
+-- output 1-4: 1/2 will follow input 1 and 3/4 will follow input 2. The first pair is more volatile.
 
-scale = {0,2,3,5,7,9,10}
 
-function init() input[2].mode('change',1.0,0.1,'rising') -- input 2 is expecting a clock signal
-    springA = Spring:new(0,0.5,1,0.95)
-    springB = Spring:new(0,0.05,2,0.5)
-    output[1].scale(scale)
-    output[2].scale(scale)
-    output[3].scale(scale)
+
+-- settings
+scale = false -- outputs are continous (not quantized) or switch with line below like so:
+-- scale = {0,2,3,5,7,9,10} -- optional scale to quantize the 4 outputs to
+rate = 0.05 -- sets the refresh rate for the springs' state
+
+function init()
+    -- initialize the 4 springs with dedicated settings for gravity, spring constant, mass, and dampening
+    springA = Spring:new(0,0.5,2,0.92)
+    springB = Spring:new(0,0.01,5,0.97)
+    springC = Spring:new(0,0.7,1,0.90)
+    springD = Spring:new(0,0.03,5,0.92)
+
+    -- configure the 4 outputs
+    for i = 1, 4 do
+      if scale then 
+        -- if a scale is set up in settings it is used here
+        output[i].scale(scale)
+      else 
+        -- otherwise the output is slewed to be continuous
+        output[i].slew  = rate
+      end
+    end
+
+    -- kick of the spring update cycle at the given rate
     metro[1].event = updateSprings
-    metro[1].time  = 0.05
+    metro[1].time  = rate
     metro[1]:start()
 end
 
-input[2].change = function(state)
-    -- output[1].volts = math.random() * 10 - 5
-    target = input[1].volts
-    output[1].volts = target 
-    output[2].volts = springA.ps 
-    output[3].volts = springB.ps 
-end
-
 function updateSprings() 
-    springA:calculate()
-    springB:calculate()
+    -- update the spring pairs A/B and C/D based on input 1 and 2 using the built in method
+    springA:calculate(input[1].volts)
+    springB:calculate(input[1].volts)
+    springC:calculate(input[2].volts)
+    springD:calculate(input[2].volts)
+
+    -- update the outputs based on the updated springs' states. They all will evetually catch up with the input voltages
+    output[1].volts = springA.ps 
+    output[2].volts = springB.ps 
+    output[3].volts = springC.ps 
+    output[4].volts = springD.ps 
 end
 
 
 
--- spring object
+-- defining the spring object
 
 Spring = {}
 
 function Spring:new(g,K,M,D)             
 -- a = postion of anchor
 -- f = force = f=-ky
--- g = gravity
+-- g = gravity (if not 0 the output will be offset from the input and never catch up)
 -- as = acceleration, f=ma == a=f/m
 -- vs = velocity
 -- ps = position of spring end
@@ -53,14 +72,13 @@ function Spring:new(g,K,M,D)
 end
 
 
-function Spring:calculate()
-  --  physics!
-  self.a = input[1].volts
-  self.f = -self.K * ( self.ps - self.a ) -- f=-ky
-  self.as = self.f / self.M + self.M * self.g          -- Set the acceleration, f=ma == a=f/m
-  self.vs = self.D * (self.vs + self.as);  -- Set the velocity
-  self.ps = self.ps + self.vs        -- Updated endpoint position
-  print(self.a - self.ps)
+function Spring:calculate(target)
+  --  method to calculate the spring's state with physics!
+  self.a = target or input[1].volts
+  self.f = -self.K * ( self.ps - self.a )     -- f=-ky
+  self.as = self.f / self.M + self.M * self.g -- Set the acceleration based on force, f=ma == a=f/m
+  self.vs = self.D * (self.vs + self.as);     -- Set the velocity
+  self.ps = self.ps + self.vs                 -- Updated endpoint 
 end
 
 
