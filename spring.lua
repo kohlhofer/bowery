@@ -1,14 +1,15 @@
 --- Springs
 -- a spring physics based voltage follower
 -- input 1+2: voltages that outs 1/2 and 2/4 will follow.
--- output 1-4: 1/2 will follow input 1 and 3/4 will follow input 2. The first pair is more volatile.
+-- output 1/2 will follow input 1 
+-- output 3/4 will follow input 2 (the first pair is more volatile)
+-- For best results don't attentuate the input but the outputs. Bigger or faster changes put more energy into the system and create more pronounced effects. Try using a quantizer to drive two related melodies.
 
 
 
 -- settings
-scale = false -- outputs are continous (not quantized) or switch with line below like so:
--- scale = {0,2,3,5,7,9,10} -- optional scale to quantize the 4 outputs to
-rate = 0.05 -- sets the refresh rate for the springs' state
+scale = false -- outputs are continous (not quantized). Try {0,2,3,5,7,9,10} instead.
+rate = 0.05 -- sets the refresh rate for the springs' state calculation. This has a drastic effect and is callibrate to the default set of variables for the springs.
 
 function init()
     -- initialize the 4 springs with dedicated settings for gravity, spring constant, mass, and dampening
@@ -36,12 +37,14 @@ end
 
 function updateSprings() 
     -- update the spring pairs A/B and C/D based on input 1 and 2 using the built in method
+    -- Tip: try passing in one springs endpoint (e.g. springA.ps) as anbother springs target
     springA:calculate(input[1].volts)
     springB:calculate(input[1].volts)
     springC:calculate(input[2].volts)
     springD:calculate(input[2].volts)
 
-    -- update the outputs based on the updated springs' states. They all will evetually catch up with the input voltages
+    -- update the outputs based on the updated springs' states. They all will evetually catch up with the input voltages.
+    -- Please note: If you set gravity to something other than 0 than springs will set in a "stretched state which means the voltage will never quite reach the input voltage.
     output[1].volts = springA.ps 
     output[2].volts = springB.ps 
     output[3].volts = springC.ps 
