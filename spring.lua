@@ -9,7 +9,7 @@
 
 -- settings
 scale = false -- outputs are continous (not quantized). Try {0,2,3,5,7,9,10} instead.
-rate = 0.05 -- sets the refresh rate for the springs' state calculation. This has a drastic effect and is callibrate to the default set of variables for the springs.
+rate = 0.05 -- sets the refresh rate for the springs' state calculation. This has a drastic effect and is callibrated to the default set of variables for the springs. Best leave and play with the spring values below instead.
 
 function init()
     -- initialize the 4 springs with dedicated settings for gravity, spring constant, mass, and dampening
@@ -37,14 +37,14 @@ end
 
 function updateSprings() 
     -- update the spring pairs A/B and C/D based on input 1 and 2 using the built in method
-    -- Tip: try passing in one springs endpoint (e.g. springA.ps) as anbother springs target
+    -- Tip: try passing in one spring's endpoint (e.g. springA.ps) as another spring's target
     springA:calculate(input[1].volts)
     springB:calculate(input[1].volts)
     springC:calculate(input[2].volts)
     springD:calculate(input[2].volts)
 
     -- update the outputs based on the updated springs' states. They all will evetually catch up with the input voltages.
-    -- Please note: If you set gravity to something other than 0 than springs will set in a "stretched state which means the voltage will never quite reach the input voltage.
+    -- Please note: If you set gravity to something other than 0 than springs will set in a "stretched" state which means the output will never quite reach the input voltage.
     output[1].volts = springA.ps 
     output[2].volts = springB.ps 
     output[3].volts = springC.ps 
